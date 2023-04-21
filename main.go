@@ -5,7 +5,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"errors"
 )
+
+// this should be a builtin...
+func has[T comparable, V any](m map[T]V, key T) bool {
+	_, ok := m[key]
+	return ok
+}
 
 type operator struct {
 	sym   string // operator string
@@ -18,8 +25,9 @@ func (o1 operator) less(o2 operator) bool {
 	return o2.prec > o1.prec || o1.prec == o2.prec && !o2.right
 }
 
-// NOTE: parenthesis balance check is not performed
-func toRPN(expr []string, ops... operator) []string {
+// TODO: add support for unary opearators
+// convert infix expression to postfix
+func toRPN(expr []string, ops []operator) []string {
 	opmap := make(map[string]operator)
 	for _, op := range ops {
 		opmap[op.sym] = op
@@ -82,22 +90,64 @@ func join(sep string, ss []string) string {
 	return joined
 }
 
-// TODO: add support for validation
-// TODO: add support for unary opearators
+// TODO: use error location reporting
+// check if expression is a valid infix expression
+func check(infix []string, ops []operator) error {
+	opmap := make(map[string]operator)
+	for _, op := range ops {
+		opmap[op.sym] = op
+	}
+	parens := 0
+	for i, s := range infix {
+		if s == "(" {
+			parens += 1
+			if infix[i + 1] == ")" {
+				return errors.New("empty brackets")
+			}
+		} else if s == ")" {
+			if parens == 0 {
+				return errors.New("unmatched ')'")
+			}
+			parens -= 1
+		} else if has(opmap, s) {
+			if !(i > 0 && (!has(opmap, infix[i-1]) || infix[i-1] == ")")) {
+				return errors.New("expected a ')' or an argument to the left of the operator")
+			}
+			if !(i < len(infix)-1 && (!has(opmap, infix[i+1]) || infix[i+1] == "(")) {
+				return errors.New("expected a '(' or an argument to the right of the operator")
+			}
+		} else {
+			if !(i == 0 || (has(opmap, infix[i-1]) || infix[i-1] == "(")) {
+				return errors.New("expected nothing or a '(' or an operator to the left of the argument")
+			}
+			if !(i == len(infix)-1 || (has(opmap, infix[i+1]) || infix[i+1] == ")")) {
+				return errors.New("expected nothing or a ')' or an operator to the right of the argument")
+			}
+		}
+	}
+	if parens > 0 {
+		return errors.New("unmatched '('")
+	}
+	return nil
+}
+
 // TODO: read operators from file (or better yet - arguments)
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("usage: %s EXPR\n", os.Args[0])
 		os.Exit(1)
 	}
-	infix := split(os.Args[1])
-	rpn := toRPN(infix,
-		operator{sym: ",", prec: 4},
-		operator{sym: "!", prec: 3},
+	ops := []operator{
 		operator{sym: "/", prec: 2},
 		operator{sym: "*", prec: 2},
 		operator{sym: "-", prec: 1},
 		operator{sym: "+", prec: 1},
-	)
+	}
+	infix := split(os.Args[1])
+	if err := check(infix, ops); err != nil {
+		fmt.Printf("error: %s\n", err.Error())
+		os.Exit(1)
+	}
+	rpn := toRPN(infix, ops)
 	fmt.Println(join(" ", rpn))
 }
