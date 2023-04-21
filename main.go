@@ -50,6 +50,7 @@ func ToRPN(expr []string, ops... Op) []string {
 	return rpn
 }
 
+// split line by spaces and brackets
 func split(s string) []string {
 	tokens := []string{}
 	for pos, start := 0, 0; pos <= len(s); pos++ {
@@ -69,6 +70,7 @@ func split(s string) []string {
 	return tokens
 }
 
+// join words with space
 func join(sep string, ss []string) string {
 	if len(ss) == 0 {
 		return ""
@@ -80,8 +82,12 @@ func join(sep string, ss []string) string {
 	return joined
 }
 
+// TODO: add support for validation
+// TODO: add support for unary opearators
+// TODO: read operators from file (or better yet - arguments)
 func main() {
 	if len(os.Args) != 2 {
+		fmt.Printf("usage: %s EXPR\n", os.Args[0])
 		os.Exit(1)
 	}
 	infix := split(os.Args[1])
