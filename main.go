@@ -7,33 +7,33 @@ import (
 	"os"
 )
 
-type Op struct {
+type operator struct {
 	sym   string // operator string
 	prec  int    // precedence (>= 0)
 	right bool   // associativity (false - left, true - right)
 }
 
 // NOTE: operators with the same precedence must have the same associativity
-func (o1 Op) Less(o2 Op) bool {
+func (o1 operator) less(o2 operator) bool {
 	return o2.prec > o1.prec || o1.prec == o2.prec && !o2.right
 }
 
 // NOTE: parenthesis balance check is not performed
-func ToRPN(expr []string, ops... Op) []string {
-	opmap := make(map[string]Op)
+func toRPN(expr []string, ops... operator) []string {
+	opmap := make(map[string]operator)
 	for _, op := range ops {
 		opmap[op.sym] = op
 	}
-	rpn, opstack := []string{}, []Op{}
+	rpn, opstack := []string{}, []operator{}
 	for _, s := range expr {
 		if op, isop := opmap[s]; isop {
 			i := len(opstack) - 1
-			for ; i >= 0 && op.Less(opstack[i]); i-- {
+			for ; i >= 0 && op.less(opstack[i]); i-- {
 				rpn = append(rpn, opstack[i].sym)
 			}
 			opstack = append(opstack[:i+1], op)
 		} else if s == "(" {
-			opstack = append(opstack, Op{sym: "(", prec: -1})
+			opstack = append(opstack, operator{sym: "(", prec: -1})
 		} else if s == ")" {
 			i := len(opstack) - 1
 			for ; i > 0 && opstack[i].sym != "("; i-- {
@@ -91,11 +91,13 @@ func main() {
 		os.Exit(1)
 	}
 	infix := split(os.Args[1])
-	rpn := ToRPN(infix,
-		Op{sym: ",", prec: 4},
-		Op{sym: "!", prec: 3},
-		Op{sym: "*", prec: 2},
-		Op{sym: "+", prec: 1},
+	rpn := toRPN(infix,
+		operator{sym: ",", prec: 4},
+		operator{sym: "!", prec: 3},
+		operator{sym: "/", prec: 2},
+		operator{sym: "*", prec: 2},
+		operator{sym: "-", prec: 1},
+		operator{sym: "+", prec: 1},
 	)
 	fmt.Println(join(" ", rpn))
 }
