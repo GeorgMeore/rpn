@@ -1,5 +1,8 @@
 // Don't know why I did this but I did
 
+// TODO: read operators from file (or better yet - arguments)
+// TODO: add support for unary opearators
+
 package main
 
 import (
@@ -25,7 +28,6 @@ func (o1 operator) less(o2 operator) bool {
 	return o2.prec > o1.prec || o1.prec == o2.prec && !o2.right
 }
 
-// TODO: add support for unary opearators
 // convert infix expression to postfix
 func toRPN(expr []string, ops []operator) []string {
 	opmap := make(map[string]operator)
@@ -131,7 +133,6 @@ func check(infix []string, ops []operator) error {
 	return nil
 }
 
-// TODO: read operators from file (or better yet - arguments)
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("usage: %s EXPR\n", os.Args[0])
