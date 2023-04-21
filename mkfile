@@ -1,6 +1,6 @@
 PROG=rpn
 
-default:VQ:
+$PROG: main.go
 	go build -o $PROG
 
 clean:
