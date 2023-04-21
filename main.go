@@ -1,7 +1,7 @@
 // Don't know why I did this but I did
 
-// TODO: read operators from file (or better yet - arguments)
 // TODO: add support for unary opearators
+// TODO: write README
 
 package main
 
@@ -15,6 +15,10 @@ import (
 func has[T comparable, V any](m map[T]V, key T) bool {
 	_, ok := m[key]
 	return ok
+}
+
+func errorf(format string, vs... any) error {
+	return errors.New(fmt.Sprintf(format, vs...))
 }
 
 type operator struct {
@@ -43,6 +47,7 @@ func toRPN(expr []string, ops []operator) []string {
 			}
 			opstack = append(opstack[:i+1], op)
 		} else if s == "(" {
+			// push pseudo-operator '(' with lowest precedence
 			opstack = append(opstack, operator{sym: "(", prec: -1})
 		} else if s == ")" {
 			i := len(opstack) - 1
@@ -104,46 +109,86 @@ func check(infix []string, ops []operator) error {
 		if s == "(" {
 			parens += 1
 			if infix[i + 1] == ")" {
-				return errors.New("empty brackets")
+				return errorf("empty brackets")
 			}
 		} else if s == ")" {
 			if parens == 0 {
-				return errors.New("unmatched ')'")
+				return errorf("unmatched ')'")
 			}
 			parens -= 1
 		} else if has(opmap, s) {
 			if !(i > 0 && (!has(opmap, infix[i-1]) || infix[i-1] == ")")) {
-				return errors.New("expected a ')' or an argument to the left of the operator")
+				return errorf("expected a ')' or an argument to the left of the operator")
 			}
 			if !(i < len(infix)-1 && (!has(opmap, infix[i+1]) || infix[i+1] == "(")) {
-				return errors.New("expected a '(' or an argument to the right of the operator")
+				return errorf("expected a '(' or an argument to the right of the operator")
 			}
 		} else {
 			if !(i == 0 || (has(opmap, infix[i-1]) || infix[i-1] == "(")) {
-				return errors.New("expected nothing or a '(' or an operator to the left of the argument")
+				return errorf("expected nothing or a '(' or an operator to the left of the argument")
 			}
 			if !(i == len(infix)-1 || (has(opmap, infix[i+1]) || infix[i+1] == ")")) {
-				return errors.New("expected nothing or a ')' or an operator to the right of the argument")
+				return errorf("expected nothing or a ')' or an operator to the right of the argument")
 			}
 		}
 	}
 	if parens > 0 {
-		return errors.New("unmatched '('")
+		return errorf("unmatched '('")
 	}
 	return nil
 }
 
+// TODO: read from file instead
+// parse operator descriptions
+func getops(args []string) ([]operator, int) {
+	ops := []operator{}
+	for prec, arg := range args {
+		if len(arg) < 3 {
+			return nil, prec
+		}
+		right := false
+		if arg[0] == 'r' {
+			right = true
+		} else if arg[0] == 'l' {
+			right = false
+		} else {
+			return nil, prec
+		}
+		if arg[1] != ':' {
+			return nil, prec
+		}
+		for pos := 1; pos < len(arg); {
+			start := pos + 1
+			for pos = start; pos < len(arg) && arg[pos] != ':'; {
+				pos += 1
+			}
+			if pos - start < 1 {
+				return nil, prec
+			}
+			ops = append(ops, operator{sym: arg[start:pos], right: right, prec: prec})
+		}
+	}
+	return ops, -1
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("usage: %s EXPR\n", os.Args[0])
+	if len(os.Args) < 2 {
+		fmt.Printf("usage: %s EXPR OPERATORS\n", os.Args[0])
 		os.Exit(1)
 	}
-	ops := []operator{
-		operator{sym: "/", prec: 2},
-		operator{sym: "*", prec: 2},
-		operator{sym: "-", prec: 1},
-		operator{sym: "+", prec: 1},
+	ops, bad := getops(os.Args[2:])
+	if bad >= 0 {
+		fmt.Printf("error: bad argument: '%s'\n", os.Args[2+bad])
+		os.Exit(1)
 	}
+	fmt.Println(ops)
+	//ops := []operator{
+	//	operator{sym: "^", prec: 3, right: true},
+	//	operator{sym: "/", prec: 2},
+	//	operator{sym: "*", prec: 2},
+	//	operator{sym: "-", prec: 1},
+	//	operator{sym: "+", prec: 1},
+	//}
 	infix := split(os.Args[1])
 	if err := check(infix, ops); err != nil {
 		fmt.Printf("error: %s\n", err.Error())
