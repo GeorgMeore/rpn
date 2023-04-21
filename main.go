@@ -9,22 +9,18 @@ import (
 
 func split(s string) []string {
 	tokens := []string{}
-	for len(s) > 0 {
-		switch s[0] {
-		case ' ':
-			s = s[1:]
-		case '+', '-', '/', '*', ',', '(', ')', '!':
-			tokens = append(tokens, s[:1])
-			s = s[1:]
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			end := 0
-			for end < len(s) && s[end] >= '0' && s[end] <= '9' {
-				end += 1
+	for pos, start := 0, 0; pos <= len(s); pos++ {
+		if pos == len(s) || s[pos] == ' ' || s[pos] == '\t' {
+			if pos > start {
+				tokens = append(tokens, s[start:pos])
 			}
-			tokens = append(tokens, s[:end])
-			s = s[end:]
-		default:
-			s = s[1:]
+			start = pos + 1
+		} else if s[pos] == '(' || s[pos] == ')' {
+			if pos > start {
+				tokens = append(tokens, s[start:pos])
+			}
+			tokens = append(tokens, s[pos:pos+1])
+			start = pos + 1
 		}
 	}
 	return tokens
