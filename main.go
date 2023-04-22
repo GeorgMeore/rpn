@@ -6,10 +6,10 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"os"
-	"errors"
-	"bufio"
 	"strings"
 )
 
@@ -19,7 +19,7 @@ func has[T comparable, V any](m map[T]V, key T) bool {
 	return ok
 }
 
-func errorf(format string, vs... any) error {
+func errorf(format string, vs ...any) error {
 	return errors.New(fmt.Sprintf(format, vs...))
 }
 
@@ -57,7 +57,7 @@ func toRPN(expr []string, opmap map[string]operator) []string {
 			rpn = append(rpn, s)
 		}
 	}
-	for i := len(opstack)-1; i >= 0; i-- {
+	for i := len(opstack) - 1; i >= 0; i-- {
 		rpn = append(rpn, opstack[i].sym)
 	}
 	return rpn
@@ -105,7 +105,7 @@ func check(infix []string, opmap map[string]operator) error {
 	for i, s := range infix {
 		if s == "(" {
 			parens += 1
-			if i < len(infix)-1 && infix[i + 1] == ")" {
+			if i < len(infix)-1 && infix[i+1] == ")" {
 				return errorf("empty brackets")
 			}
 		} else if s == ")" {
@@ -150,7 +150,7 @@ func getops(args []string) ([]operator, error) {
 			} else if flag == 'l' {
 				right = false
 			} else {
-				return nil, errorf("'%s': unknown flag: %s", arg, flag)
+				return nil, errorf("'%s': unknown flag: %c", arg, flag)
 			}
 		}
 		for _, sym := range desc[1:] {
