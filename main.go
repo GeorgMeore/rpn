@@ -10,6 +10,7 @@ import (
 	"os"
 	"errors"
 	"bufio"
+	"strings"
 )
 
 // this should be a builtin...
@@ -144,29 +145,22 @@ func check(infix []string, ops []operator) error {
 func getops(args []string) ([]operator, int) {
 	ops := []operator{}
 	for prec, arg := range args {
-		if len(arg) < 3 {
+		desc := strings.Split(arg, ":")
+		if len(desc) < 2 {
 			return nil, prec
 		}
 		right := false
-		if arg[0] == 'r' {
-			right = true
-		} else if arg[0] == 'l' {
-			right = false
-		} else {
-			return nil, prec
-		}
-		if arg[1] != ':' {
-			return nil, prec
-		}
-		for pos := 1; pos < len(arg); {
-			start := pos + 1
-			for pos = start; pos < len(arg) && arg[pos] != ':'; {
-				pos += 1
-			}
-			if pos - start < 1 {
+		for _, flag := range desc[0] {
+			if flag == 'r' {
+				right = true
+			} else if flag == 'l' {
+				right = false
+			} else {
 				return nil, prec
 			}
-			ops = append(ops, operator{sym: arg[start:pos], right: right, prec: prec})
+		}
+		for _, sym := range desc[1:] {
+			ops = append(ops, operator{sym: sym, right: right, prec: prec})
 		}
 	}
 	return ops, -1
@@ -187,7 +181,6 @@ func main() {
 		infix := split(scanner.Text())
 		if err := check(infix, ops); err != nil {
 			fmt.Printf("error: %s\n", err.Error())
-			os.Exit(1)
 		}
 		rpn := toRPN(infix, ops)
 		fmt.Println(join(" ", rpn))
