@@ -35,11 +35,7 @@ func (o1 operator) less(o2 operator) bool {
 }
 
 // convert infix expression to postfix
-func toRPN(expr []string, ops []operator) []string {
-	opmap := make(map[string]operator)
-	for _, op := range ops {
-		opmap[op.sym] = op
-	}
+func toRPN(expr []string, opmap map[string]operator) []string {
 	rpn, opstack := []string{}, []operator{}
 	for _, s := range expr {
 		if op, isop := opmap[s]; isop {
@@ -99,12 +95,11 @@ func join(sep string, ss []string) string {
 	return joined
 }
 
-// TODO: use error location reporting
+// TODO: error location reporting
 // check if expression is a valid infix expression
-func check(infix []string, ops []operator) error {
-	opmap := make(map[string]operator)
-	for _, op := range ops {
-		opmap[op.sym] = op
+func check(infix []string, opmap map[string]operator) error {
+	if len(infix) == 0 {
+		return nil
 	}
 	parens := 0
 	for i, s := range infix {
@@ -120,17 +115,17 @@ func check(infix []string, ops []operator) error {
 			parens -= 1
 		} else if has(opmap, s) {
 			if !(i > 0 && (!has(opmap, infix[i-1]) || infix[i-1] == ")")) {
-				return errorf("expected a ')' or an argument to the left of the operator")
+				return errorf("expected a ')' or an argument before '%s'", s)
 			}
 			if !(i < len(infix)-1 && (!has(opmap, infix[i+1]) || infix[i+1] == "(")) {
-				return errorf("expected a '(' or an argument to the right of the operator")
+				return errorf("expected a '(' or an argument after '%s'", s)
 			}
 		} else {
 			if !(i == 0 || (has(opmap, infix[i-1]) || infix[i-1] == "(")) {
-				return errorf("expected nothing or a '(' or an operator to the left of the argument")
+				return errorf("expected nothing or a '(' or an operator before '%s'", s)
 			}
 			if !(i == len(infix)-1 || (has(opmap, infix[i+1]) || infix[i+1] == ")")) {
-				return errorf("expected nothing or a ')' or an operator to the right of the argument")
+				return errorf("expected nothing or a ')' or an operator after '%s'", s)
 			}
 		}
 	}
@@ -140,14 +135,13 @@ func check(infix []string, ops []operator) error {
 	return nil
 }
 
-// TODO: read from file instead
 // parse operator descriptions
-func getops(args []string) ([]operator, int) {
+func getops(args []string) ([]operator, error) {
 	ops := []operator{}
 	for prec, arg := range args {
 		desc := strings.Split(arg, ":")
 		if len(desc) < 2 {
-			return nil, prec
+			return nil, errorf("'%s': invalid format", arg)
 		}
 		right := false
 		for _, flag := range desc[0] {
@@ -156,14 +150,17 @@ func getops(args []string) ([]operator, int) {
 			} else if flag == 'l' {
 				right = false
 			} else {
-				return nil, prec
+				return nil, errorf("'%s': unknown flag: %s", arg, flag)
 			}
 		}
 		for _, sym := range desc[1:] {
+			if len(sym) == 0 {
+				return nil, errorf("'%s': empty operator", arg)
+			}
 			ops = append(ops, operator{sym: sym, right: right, prec: prec})
 		}
 	}
-	return ops, -1
+	return ops, nil
 }
 
 func main() {
@@ -171,18 +168,23 @@ func main() {
 		fmt.Printf("usage: %s OPERATORS\n", os.Args[0])
 		os.Exit(1)
 	}
-	ops, bad := getops(os.Args[1:])
-	if bad >= 0 {
-		fmt.Printf("error: bad argument: '%s'\n", os.Args[2+bad])
+	ops, err := getops(os.Args[1:])
+	if err != nil {
+		fmt.Printf("error: bad argument: %s\n", err.Error())
 		os.Exit(1)
+	}
+	opmap := make(map[string]operator)
+	for _, op := range ops {
+		opmap[op.sym] = op
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		infix := split(scanner.Text())
-		if err := check(infix, ops); err != nil {
-			fmt.Printf("error: %s\n", err.Error())
+		if err := check(infix, opmap); err != nil {
+			fmt.Printf("error: bad expression: %s\n", err.Error())
+			continue
 		}
-		rpn := toRPN(infix, ops)
+		rpn := toRPN(infix, opmap)
 		fmt.Println(join(" ", rpn))
 	}
 }
