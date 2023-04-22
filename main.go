@@ -110,7 +110,7 @@ func check(infix []string, ops []operator) error {
 	for i, s := range infix {
 		if s == "(" {
 			parens += 1
-			if infix[i + 1] == ")" {
+			if i < len(infix)-1 && infix[i + 1] == ")" {
 				return errorf("empty brackets")
 			}
 		} else if s == ")" {
