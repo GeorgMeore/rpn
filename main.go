@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"errors"
+	"bufio"
 )
 
 // this should be a builtin...
@@ -173,27 +174,22 @@ func getops(args []string) ([]operator, int) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("usage: %s EXPR OPERATORS\n", os.Args[0])
+		fmt.Printf("usage: %s OPERATORS\n", os.Args[0])
 		os.Exit(1)
 	}
-	ops, bad := getops(os.Args[2:])
+	ops, bad := getops(os.Args[1:])
 	if bad >= 0 {
 		fmt.Printf("error: bad argument: '%s'\n", os.Args[2+bad])
 		os.Exit(1)
 	}
-	fmt.Println(ops)
-	//ops := []operator{
-	//	operator{sym: "^", prec: 3, right: true},
-	//	operator{sym: "/", prec: 2},
-	//	operator{sym: "*", prec: 2},
-	//	operator{sym: "-", prec: 1},
-	//	operator{sym: "+", prec: 1},
-	//}
-	infix := split(os.Args[1])
-	if err := check(infix, ops); err != nil {
-		fmt.Printf("error: %s\n", err.Error())
-		os.Exit(1)
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		infix := split(scanner.Text())
+		if err := check(infix, ops); err != nil {
+			fmt.Printf("error: %s\n", err.Error())
+			os.Exit(1)
+		}
+		rpn := toRPN(infix, ops)
+		fmt.Println(join(" ", rpn))
 	}
-	rpn := toRPN(infix, ops)
-	fmt.Println(join(" ", rpn))
 }
