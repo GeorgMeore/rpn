@@ -1,6 +1,6 @@
 // Don't know why I did this but I did
 
-// TODO: add support for unary opearators
+// TODO: add support for unary opearators (or not)
 // TODO: write README
 
 package main
