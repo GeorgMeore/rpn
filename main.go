@@ -241,10 +241,10 @@ func main() {
 		infix := split(scanner.Text())
 		if err := check(infix, opmap); err != nil {
 			fmt.Printf("error: bad expression: %s\n", err.Error())
-			continue
+		} else {
+			rpn := toRPN(infix, opmap)
+			fmt.Println(join(" ", rpn))
 		}
-		rpn := toRPN(infix, opmap)
-		fmt.Println(join(" ", rpn))
 		if istty {
 			fmt.Print("> ")
 		}
