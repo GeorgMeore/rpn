@@ -177,7 +177,14 @@ func main() {
 	for _, op := range ops {
 		opmap[op.sym] = op
 	}
+	istty := false
+	if info, _ := os.Stdout.Stat(); info.Mode()&os.ModeCharDevice != 0 {
+		istty = true
+	}
 	scanner := bufio.NewScanner(os.Stdin)
+	if istty {
+		fmt.Print("> ")
+	}
 	for scanner.Scan() {
 		infix := split(scanner.Text())
 		if err := check(infix, opmap); err != nil {
@@ -186,5 +193,8 @@ func main() {
 		}
 		rpn := toRPN(infix, opmap)
 		fmt.Println(join(" ", rpn))
+		if istty {
+			fmt.Print("> ")
+		}
 	}
 }
