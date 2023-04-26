@@ -12,12 +12,6 @@ import (
 	"strings"
 )
 
-// this should be a builtin...
-func has[T comparable, V any](m map[T]V, key T) bool {
-	_, ok := m[key]
-	return ok
-}
-
 func errorf(format string, vs ...any) error {
 	return errors.New(fmt.Sprintf(format, vs...))
 }
