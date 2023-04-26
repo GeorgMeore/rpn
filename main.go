@@ -155,35 +155,25 @@ func check(infix []string, opmap map[string]operator) error {
 				return errorf("unmatched ')'")
 			}
 			parens -= 1
-		} else if op, isop := opmap[s]; !isop {
-			if !expect(fnothing | flparen | finfix | fprefix, opmap, infix, i - 1) {
-				return errorf("expected nothing or a '(' or an binary or prefix operator before '%s'", s)
-			}
-			if !expect(fnothing | frparen | finfix | fpostfix, opmap, infix, i + 1) {
-				return errorf("expected nothing or a ')' or an binary or postfix operator after '%s'", s)
-			}
-		} else if op.unary {
-			if op.right {
+		} else {
+			op, isop := opmap[s]
+			if !isop || op.unary && op.right { // an argument or a prefix operator
 				if !expect(fnothing | flparen | finfix | fprefix, opmap, infix, i - 1) {
 					return errorf("expected nothing or a '(' or an binary or prefix operator before '%s'", s)
 				}
-				if !expect(flparen | farg | fprefix, opmap, infix, i + 1) {
-					return errorf("expected a '(' or an argument or a prefix operator after '%s'", s)
-				}
-			} else {
+			} else { // an infix or postfix operator
 				if !expect(frparen | farg | fpostfix, opmap, infix, i - 1) {
 					return errorf("expected a ')' or an argument or a postfix operator before '%s'", s)
 				}
+			}
+			if !isop || op.unary && !op.right { // an argument or a postfix operator
 				if !expect(fnothing | frparen | finfix | fpostfix, opmap, infix, i + 1) {
 					return errorf("expected nothing or a ')' or an binary or postfix operator after '%s'", s)
 				}
-			}
-		} else {
-			if !expect(frparen | farg | fpostfix, opmap, infix, i - 1) {
-				return errorf("expected a ')' or an argument or a postfix operator before '%s'", s)
-			}
-			if !expect(flparen | farg | fprefix, opmap, infix, i + 1) {
-				return errorf("expected a '(' or an argument or a prefix operator after '%s'", s)
+			} else { // an infix or prefix operator
+				if !expect(flparen | farg | fprefix, opmap, infix, i + 1) {
+					return errorf("expected a '(' or an argument or a prefix operator after '%s'", s)
+				}
 			}
 		}
 	}
