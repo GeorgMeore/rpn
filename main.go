@@ -44,7 +44,7 @@ func toRPN(expr []string, opmap map[string]operator) []string {
 				ops = append(ops, op)
 			} else {
 				i := len(ops) - 1
-				for ; i >= 0 && (ops[i].unary && ops[i].prec<op.prec || !ops[i].unary && ops[i].prec>op.prec); i-- {
+				for ; i >= 0 && (ops[i].unary && ops[i].prec < op.prec || !ops[i].unary && ops[i].prec > op.prec); i-- {
 					rpn = append(rpn, ops[i].sym)
 				}
 				ops = ops[:i+1]
@@ -116,25 +116,25 @@ const (
 // check if i-th element of infix expression is something we expect
 func expect(flags int, opmap map[string]operator, infix []string, i int) bool {
 	if i < 0 || i == len(infix) {
-		return flags & fnothing != 0
+		return flags&fnothing != 0
 	}
 	if infix[i] == "(" {
-		return flags & flparen != 0
+		return flags&flparen != 0
 	}
 	if infix[i] == ")" {
-		return flags & frparen != 0
+		return flags&frparen != 0
 	}
 	op, isop := opmap[infix[i]]
 	if !isop {
-		return flags & farg != 0
+		return flags&farg != 0
 	}
 	if !op.unary {
-		return flags & finfix != 0
+		return flags&finfix != 0
 	}
 	if !op.right {
-		return flags & fpostfix != 0
+		return flags&fpostfix != 0
 	}
-	return flags & fprefix != 0
+	return flags&fprefix != 0
 }
 
 // TODO: error location reporting
@@ -158,20 +158,20 @@ func check(infix []string, opmap map[string]operator) error {
 		} else {
 			op, isop := opmap[s]
 			if !isop || op.unary && op.right { // an argument or a prefix operator
-				if !expect(fnothing | flparen | finfix | fprefix, opmap, infix, i - 1) {
+				if !expect(fnothing|flparen|finfix|fprefix, opmap, infix, i-1) {
 					return errorf("expected nothing or a '(' or an binary or prefix operator before '%s'", s)
 				}
 			} else { // an infix or postfix operator
-				if !expect(frparen | farg | fpostfix, opmap, infix, i - 1) {
+				if !expect(frparen|farg|fpostfix, opmap, infix, i-1) {
 					return errorf("expected a ')' or an argument or a postfix operator before '%s'", s)
 				}
 			}
 			if !isop || op.unary && !op.right { // an argument or a postfix operator
-				if !expect(fnothing | frparen | finfix | fpostfix, opmap, infix, i + 1) {
+				if !expect(fnothing|frparen|finfix|fpostfix, opmap, infix, i+1) {
 					return errorf("expected nothing or a ')' or an binary or postfix operator after '%s'", s)
 				}
 			} else { // an infix or prefix operator
-				if !expect(flparen | farg | fprefix, opmap, infix, i + 1) {
+				if !expect(flparen|farg|fprefix, opmap, infix, i+1) {
 					return errorf("expected a '(' or an argument or a prefix operator after '%s'", s)
 				}
 			}
