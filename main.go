@@ -23,8 +23,8 @@ type operator struct {
 	unary bool   // arity (false - binary, true - unary)
 }
 
-// TODO: some research (I am not sure this is a correct extension to shunting yard, but it seems to work)
-// convert infix expression to postfix
+// TODO: some research (I am not sure this is a correct extension to the shunting yard, but it seems to work)
+// convert an infix expression to postfix
 func toRPN(expr []string, opmap map[string]operator) []string {
 	rpn, ops := []string{}, []operator{}
 	for _, s := range expr {
@@ -70,7 +70,7 @@ func toRPN(expr []string, opmap map[string]operator) []string {
 	return rpn
 }
 
-// split line by spaces and parentheses
+// split a line by spaces and parentheses
 func split(s string) []string {
 	tokens := []string{}
 	for pos, start := 0, 0; pos <= len(s); pos++ {
@@ -113,7 +113,7 @@ const (
 	fpostfix
 )
 
-// check if i-th element of infix expression is something we expect
+// check if i-th element of an infix expression is something we expect
 func expect(flags int, opmap map[string]operator, infix []string, i int) bool {
 	if i < 0 || i == len(infix) {
 		return flags&fnothing != 0
@@ -138,7 +138,7 @@ func expect(flags int, opmap map[string]operator, infix []string, i int) bool {
 }
 
 // TODO: error location reporting
-// check if expression is a valid infix expression
+// check if an expression is a valid infix expression
 func check(infix []string, opmap map[string]operator) error {
 	if len(infix) == 0 {
 		return nil
